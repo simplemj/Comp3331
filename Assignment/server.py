@@ -1,91 +1,56 @@
-# Sample code for Multi-Threaded Server
-#Python 3
-# Usage: python3 UDPserver3.py
-#coding: utf-8
-from socket import *
+import socket
+import sys
 import threading
-import time
-import datetime as dt
 
-#Server will run on this port
-serverPort = 12000
-t_lock=threading.Condition()
-#will store clients info in this list
-clients=[]
-# would communicate with clients after every second
-UPDATE_INTERVAL= 1
-timeout=False
+localhost = '127.0.0.1'
+port_number = int(sys.argv[1])
+Admin_password = sys.argv[2]
 
+class User:
+    User_name = ""
+    Password = ""
+    State = False
 
-def recv_handler():
-    global t_lock
-    global clients
-    global clientSocket
-    global serverSocket
-    print('Server is ready for service')
-    while(1):
-        
-        message, clientAddress = serverSocket.recvfrom(2048)
-        #received data from the client, now we know who we are talking with
-        message = message.decode()
-        #get lock as we might me accessing some shared data structures
-        with t_lock:
-            currtime = dt.datetime.now()
-            date_time = currtime.strftime("%d/%m/%Y, %H:%M:%S")
-            print('Received request from', clientAddress[0], 'listening at', clientAddress[1], ':', message, 'at time ', date_time)
-            if(message == 'Subscribe'):
-                #store client information (IP and Port No) in list
-                clients.append(clientAddress)
-                serverMessage="Subscription successfull"
-            elif(message=='Unsubscribe'):
-                #check if client already subscribed or not
-                if(clientAddress in clients):
-                    clients.remove(clientAddress)
-                    serverMessage="Subscription removed"
-                else:
-                    serverMessage="You are not currently subscribed"
-            else:
-                serverMessage="Unknown command, send Subscribe or Unsubscribe only"
-            #send message to the client
-            serverSocket.sendto(serverMessage.encode(), clientAddress)
-            #notify the thread waiting
-            t_lock.notify()
+    def __init__(self,Username,Password):
+        self.Password = Password
+        self.User_name = Username
+        self.State = False
+
+class User_file:
+    UserList = dict()
+    file_name = ""
+    def __init__(self,fileName):
+        self.file_name = fileName
+        self.UserList = dict()
+        with open(self.file_name,'r') as file:
+            line = file.read().splitlines()
+            for content in line:
+                if content != "":
+                    data = content.split(" ")
+                    username = data[0]
+                    password = data[1]
+                    self.UserList[username] = User(username,password)
 
 
-def send_handler():
-    global t_lock
-    global clients
-    global clientSocket
-    global serverSocket
-    global timeout
-    #go through the list of the subscribed clients and send them the current time after every 1 second
-    while(1):
-        #get lock
-        with t_lock:
-            for i in clients:
-                currtime =dt.datetime.now()
-                date_time = currtime.strftime("%d/%m/%Y, %H:%M:%S")
-                message='Current time is ' + date_time
-                clientSocket.sendto(message.encode(), i)
-                print('Sending time to', i[0], 'listening at', i[1], 'at time ', date_time)
-            #notify other thread
-            t_lock.notify()
-        #sleep for UPDATE_INTERVAL
-        time.sleep(UPDATE_INTERVAL)
 
-#we will use two sockets, one for sending and one for receiving
-clientSocket = socket(AF_INET, SOCK_DGRAM)
-serverSocket = socket(AF_INET, SOCK_DGRAM)
-serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-serverSocket.bind(('localhost', serverPort))
+def recv_handler(connectionsocket):
+    while True:
+        datarecv, _ = connectionsocket.recvfrom(1024)
+        clientcommand = datarecv.decode()
+        if not clientcommand:
+            print("!!!!Exception: Client connection close without logout!!!!")
+            break
+    connectionsocket.close()
 
-recv_thread=threading.Thread(name="RecvHandler", target=recv_handler)
-recv_thread.daemon=True
-recv_thread.start()
 
-send_thread=threading.Thread(name="SendHandler",target=send_handler)
-send_thread.daemon=True
-send_thread.start()
-#this is the main thread
-while True:
-    time.sleep(0.1)
+
+if __name__ == "__main__":
+    socketserver = socket.socket(socket.AF_INET,socket.SOCK_STREAM) 
+    socketserver.bind((localhost, port_number))
+    socketserver.listen(5)
+    print("Waiting for client")
+    while True:
+        connectionsocket, address = socketserver.accept()
+        client_thread = threading.Thread(name="client_thread", target= recv_handler, args=(connectionsocket,))
+        client_thread.daemon=True
+        client_thread.start()
