@@ -5,52 +5,75 @@ import threading
 localhost = '127.0.0.1'
 port_number = int(sys.argv[1])
 Admin_password = sys.argv[2]
-
-class User:
-    User_name = ""
-    Password = ""
-    State = False
-
-    def __init__(self,Username,Password):
-        self.Password = Password
-        self.User_name = Username
-        self.State = False
-
-class User_file:
-    UserList = dict()
-    file_name = ""
-    def __init__(self,fileName):
-        self.file_name = fileName
-        self.UserList = dict()
-        with open(self.file_name,'r') as file:
-            line = file.read().splitlines()
-            for content in line:
-                if content != "":
-                    data = content.split(" ")
-                    username = data[0]
-                    password = data[1]
-                    self.UserList[username] = User(username,password)
+credentials = dict()
 
 
 
-def recv_handler(connectionsocket):
+def init_data():
+
+    # read credentials.txt
+    with open("credentials.txt", "r") as file:
+        content = file.read().splitlines()
+        for text in content:
+            if text != "":
+                data = text.split(" ")
+                user, pwd = data[0], data[1]
+                credentials[user] = pwd
+
+def create_new_user(username, password):
+
+    credentials.update({username: password})
+
+    # update credentials.txt
+    with open("credentials.txt", "a") as fp:
+        fp.write("\n" + username + " " + password)
+
+def recv_handler(server,connectionsocket):
+    flag = 1
+    
+    # Determine if the user is registered
     while True:
-        datarecv, _ = connectionsocket.recvfrom(1024)
-        clientcommand = datarecv.decode()
-        if not clientcommand:
-            print("!!!!Exception: Client connection close without logout!!!!")
+        if flag == 1:
+            print("Client connected")
+            flag += 1
+
+        username = server.recv(2048).decode()
+        if username in credentials:
+            message = "registered"
+            server.send(message.encode())
+            password = server.recv(2048).decode()
+        else:
+            print("New user")
+            message = username
+            server.send(message.encode())
+            password = server.recv(2048).decode()
+            create_new_user(username, password)
+        
+        
+        if(credentials[username] == password):
+            message = "success"
+            server.send(message.encode())
+            print(username + " successful login")
             break
-    connectionsocket.close()
+        print("Incorrect password")
+        message = "unsuccess"
+        server.send(message.encode())
+
+    while True:
+        message = server.recv(2048).decode()
+        
+
 
 
 
 if __name__ == "__main__":
-    socketserver = socket.socket(socket.AF_INET,socket.SOCK_STREAM) 
-    socketserver.bind((localhost, port_number))
-    socketserver.listen(5)
-    print("Waiting for client")
+    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serverSocket.bind(('127.0.0.1', port_number))
+    serverSocket.listen(5)
+    init_data()
+    print("Waiting for clients")
     while True:
-        connectionsocket, address = socketserver.accept()
-        client_thread = threading.Thread(name="client_thread", target= recv_handler, args=(connectionsocket,))
-        client_thread.daemon=True
-        client_thread.start()
+        conn, addr = serverSocket.accept()
+        serverThread = threading.Thread(target=recv_handler, args=(conn, addr))
+        serverThread.daemon = True
+        serverThread.start()
