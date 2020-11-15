@@ -28,7 +28,7 @@ class Message:
         self.text = text
 
 class Thread_sys:
-    ThreadList = None
+    ThreadList = dict()
     
     def __init__(self):
         self.ThreadList = dict()
@@ -38,6 +38,17 @@ class Thread_sys:
             self.ThreadList[title] = Thread(title,author)
             return True
         return False
+    
+    def ListThread(self):
+        content = ""
+        for title in self.ThreadList.keys():
+            content = content + title
+            content = content + "\n"
+        if content == "":
+            return False
+        else:
+            content = content[:-1]
+        return content
 
 
 def init_data():
@@ -106,6 +117,14 @@ def recv_handler(server,connectionsocket):
                 else:
                     send_message = "unsuccess"
                     server.send(send_message.encode())
+            elif command == "LST":
+                thread_list = thread_sys.ListThread()
+                if thread_list == False:
+                    send_message = "Empty"
+                    server.send(send_message.encode())
+                else:
+                    server.send(thread_list.encode())
+
                     
         
 

@@ -44,6 +44,14 @@ def recv_hurder():
                    print("Thread " + title + " created")
                 else:
                     print("Thread " + title + " exists" )
+            elif command == "LST":
+                if len(content) != 1:
+                    print("Incorrect syntax for LST")
+                elif recv_message == "Empty":
+                    print("No threads to list")
+                else:
+                    print("The list of active threads:")
+                    print(recv_message)
 
             
 
