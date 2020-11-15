@@ -17,7 +17,7 @@ def recv_hurder():
         if message == "registered":
             clientSocket.send(input("Enter password: ").encode())
         else:
-            clientSocket.send(input("Enter new password for " + message + ":").encode())
+            clientSocket.send(input("Enter new password for " + message + ": ").encode())
 
         status = clientSocket.recv(2048).decode()
         if status == "success":
@@ -29,8 +29,24 @@ def recv_hurder():
 
     # command process
     while True:
-        clientSocket.send(input("Enter one of the following commands: CRT, MSG, DLT, EDT, LST, RDT, UDP, DWN, RMV, XIT, SHT:").encode())
-        message = clientSocket.recv(2048).decode()
+        command_menu = "Enter one of the following commands: CRT, MSG, DLT, EDT, LST, RDT, UDP, DWN, RMV, XIT, SHT: "
+        content = input(command_menu)
+        clientSocket.send(content.encode())
+        content = content.split(" ")
+        command = content[0]
+        recv_message = clientSocket.recv(2048).decode()
+        if recv_message == "Invalid":
+            print("Invalid commmand")
+        else:
+            if command == "CRT":
+                title = content[1]
+                if recv_message == "success":
+                   print("Thread " + title + " created")
+                else:
+                    print("Thread " + title + " exists" )
+
+            
+
         
 
 if __name__ == "__main__":

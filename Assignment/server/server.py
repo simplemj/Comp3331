@@ -7,6 +7,37 @@ port_number = int(sys.argv[1])
 Admin_password = sys.argv[2]
 credentials = dict()
 
+class Thread:
+    title = ""
+    author = ""
+    MessageList = []
+
+    def __init__(self,title, author):
+        self.title = title
+        self.author = author
+        self.MessageList = []
+        with open(self.title,"w") as file:
+            file.write(self.author)
+            file.write("\n")
+
+class Message:
+    author = ""
+    text = ""
+    def __init__(self,author,text):
+        self.author = author
+        self.text = text
+
+class Thread_sys:
+    ThreadList = None
+    
+    def __init__(self):
+        self.ThreadList = dict()
+
+    def create_new_thread(self,title,author):
+        if title not in self.ThreadList:
+            self.ThreadList[title] = Thread(title,author)
+            return True
+        return False
 
 
 def init_data():
@@ -17,14 +48,11 @@ def init_data():
         for text in content:
             if text != "":
                 data = text.split(" ")
-                user, pwd = data[0], data[1]
-                credentials[user] = pwd
+                username, password = data[0], data[1]
+                credentials[username] = password
 
 def create_new_user(username, password):
-
     credentials.update({username: password})
-
-    # update credentials.txt
     with open("credentials.txt", "a") as fp:
         fp.write("\n" + username + " " + password)
 
@@ -58,19 +86,37 @@ def recv_handler(server,connectionsocket):
         print("Incorrect password")
         message = "unsuccess"
         server.send(message.encode())
-
+    
+    thread_sys = Thread_sys()
     while True:
-        message = server.recv(2048).decode()
+        recv_message = server.recv(2048).decode()
+        content = recv_message.split(" ")
+        commandList = {"CRT", "MSG", "DLT", "EDT", "LST", "RDT", "UDP", "DWN", "RMV", "XIT", "SHT"}
+        command = content[0]
+        if command not in commandList:
+            send_message = "Invalid"
+            server.send(send_message.encode())
+        else:
+            print(username + " issued " + command + " command")
+            if command == "CRT":
+                title = content[1]
+                if thread_sys.create_new_thread(title,username) == True:
+                    send_message = "success"
+                    server.send(message.encode())
+                else:
+                    send_message = "unsuccess"
+                    server.send(send_message.encode())
+                    
         
 
 
 
 
 if __name__ == "__main__":
+    init_data()
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind(('127.0.0.1', port_number))
     serverSocket.listen(5)
-    init_data()
     print("Waiting for clients")
     while True:
         conn, addr = serverSocket.accept()
