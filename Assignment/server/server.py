@@ -10,22 +10,55 @@ credentials = dict()
 class Thread:
     title = ""
     author = ""
-    MessageList = []
+    Content_list = []
+    Message_list = []
+    File_list = []
 
     def __init__(self,title, author):
         self.title = title
         self.author = author
-        self.MessageList = []
+        self.Content_list = []
+        self.Message_list = []
+        self.File_list = []
         with open(self.title,"w") as file:
             file.write(self.author)
             file.write("\n")
+    
+    def post_message(self,username,message):
+        flag = 1
+        new_message = Message(username,message)
+        self.Content_list.append(new_message)
+        self.Message_list.append(new_message)
+        with open(self.title, "w") as file:
+            first_line = self.author + "\n"
+            file.write(first_line)
+            for content in self.Content_list:
+                if content.type == "message":
+                    tmp = str(flag) + " " + username + ": " + content.text + "\n"
+                    file.write(tmp)
+                flag += 1
+            with open(self.title, "a") as file:
+                for content in self.Content_list:
+                    if content.type == "file":
+                        tmp = username + "uploaded" + content.filename
+                        file.write(tmp)
 
 class Message:
     author = ""
     text = ""
+    type = "message"
     def __init__(self,author,text):
         self.author = author
         self.text = text
+
+class File:
+    author = ""
+    filename = ""
+    type = "file"
+
+    def __init__(self,filename,author):
+        self.filename = filename
+        self.author = author
 
 class Thread_sys:
     ThreadList = dict()
@@ -98,7 +131,6 @@ def recv_handler(server,connectionsocket):
         message = "unsuccess"
         server.send(message.encode())
     
-    thread_sys = Thread_sys()
     while True:
         recv_message = server.recv(2048).decode()
         content = recv_message.split(" ")
@@ -124,14 +156,29 @@ def recv_handler(server,connectionsocket):
                     server.send(send_message.encode())
                 else:
                     server.send(thread_list.encode())
-
+            elif command == "MSG":
+                title = content[1]
+                if title not in thread_sys.ThreadList:
+                    send_message = "unsuccess"
+                    server.send(send_message.encode())
+                    print("Thread " + title + " is not exists")
+                else:
+                    message = ""
+                    length = len(content)
+                    i = 2
+                    while i < length:
+                        message += content[i]
+                        message += " "
+                        i += 1
+                    thread_sys.ThreadList[title].post_message(username,message)
+                    send_message = "success"
+                    server.send(send_message.encode())
+                    print("Message posted to " + title + " thread")
                     
-        
-
-
-
+                    
 
 if __name__ == "__main__":
+    thread_sys = Thread_sys()
     init_data()
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind(('127.0.0.1', port_number))

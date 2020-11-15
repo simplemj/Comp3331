@@ -10,7 +10,8 @@ clientSocket.connect((server_name, server_port))
 def recv_hurder():
     # login process
     while True:
-        clientSocket.send(input("Enter username: ").encode())
+        username = input("Enter username: ")
+        clientSocket.send(username.encode())
         message = clientSocket.recv(2048).decode()
     
         # Enter password
@@ -52,6 +53,13 @@ def recv_hurder():
                 else:
                     print("The list of active threads:")
                     print(recv_message)
+            elif command == "MSG":
+                title = content[1]
+                if recv_message == "unsuccuess":
+                    print("Thread " + title + " is not exists")
+                else:
+                    print("Message posted to " + title + " thread")
+
 
             
 
