@@ -79,6 +79,30 @@ def recv_hurder():
                     print("Thread " + title + " does not exists")
                 else:
                     print(recv_message)
+            elif command == "EDT":
+                if recv_message == "unsuccess":
+                    print("The message belongs to another user and cannot be edited")
+                else:
+                    print("The message has been edited")
+            elif command == "DLT":
+                if recv_message == "unsuccess":
+                    print("The message belongs to another user and cannot be deleted")
+                else:
+                    print("The message has been deleted")
+            elif command == "UDP":
+                title = content[1]
+                file_name = content[2]
+                if recv_message == "exists":
+                    with open(file_name, "rb") as file:
+                        send_message = file.read()
+                    clientSocket.send(send_message)
+                    recv_message = clientSocket.recv(2048).decode()
+                    if recv_message == "success":
+                        print(1)
+                else:
+                    print("Thread does not exists")
+
+
 
 
             

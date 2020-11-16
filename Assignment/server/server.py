@@ -33,14 +33,14 @@ class Thread:
         with open(self.title, "w") as file:
             first_line = self.author + "\n"
             file.write(first_line)
-            for content in self.Message_list:
-                tmp = str(flag) + " " + username + ": " + content.text + "\n"
-                file.write(tmp)
-                flag += 1
-            with open(self.title, "a") as file:
-                for content in self.File_list:
-                    tmp = username + "uploaded" + content.filename
+            for content in self.Content_list:
+                if content.type == "file":
+                    tmp = content.author + "uploaded" + content.filename
                     file.write(tmp)
+                else:
+                    tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
+                    file.write(tmp)
+                    flag += 1
 
     def read_thread(self):
         flag = 1
@@ -53,6 +53,65 @@ class Thread:
                 flag += 1
         result = result[:-1]
         return result
+
+    def edit_message(self,username,message_number,message):
+        if self.Message_list[message_number-1].author == username:
+            self.Message_list[message_number-1].text = message
+            flag = 1
+            with open(self.title, "w") as file:
+                first_line = self.author + "\n"
+                file.write(first_line)
+                for content in self.Content_list:
+                    if content.type == "file":
+                        tmp = content.author + "uploaded" + content.filename
+                        file.write(tmp)
+                    else:
+                        tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
+                        file.write(tmp)
+                        flag += 1
+            return True
+        return False
+
+    def delete_message(self,username,message_number):
+        if self.Message_list[message_number-1].author == username:
+            self.Content_list.remove(self.Message_list[message_number-1])
+            self.Message_list.remove(self.Message_list[message_number-1])
+            flag = 1
+            with open(self.title, "w") as file:
+                first_line = self.author + "\n"
+                file.write(first_line)
+                for content in self.Content_list:
+                    if content.type == "file":
+                        tmp = content.author + "uploaded" + content.filename
+                        file.write(tmp)
+                    else:
+                        tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
+                        file.write(tmp)
+                        flag += 1
+            return True
+        return False
+    
+    def upload_file(self,title,filename,username,content):
+        file = File(filename,username)
+        self.Content_list.append(file)
+        self.File_list.append(file)
+        with open(title + "_" + filename, "wb") as file:
+            file.write(content)
+        flag = 1
+        with open(self.title, "w") as file:
+            first_line = self.author + "\n"
+            file.write(first_line)
+            for content in self.Content_list:
+                if content.type == "file":
+                    tmp = content.author + "uploaded" + content.filename
+                    file.write(tmp)
+                else:
+                    tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
+                    file.write(tmp)
+                    flag += 1
+
+
+
 
         
 class Message:
@@ -240,12 +299,54 @@ def recv_handler(server,connectionsocket):
                         send_message = thread_sys.ThreadList[title].read_thread()
                         if send_message == "":
                             print("Thread " + title + " is empty")
+                        else: 
+                            print("Thread " + title + " read")
+                    server.send(send_message.encode())
+                elif command == "EDT":
+                    title = content[1]
+                    message_number = int(content[2])
+                    if title not in thread_sys.ThreadList:
+                        send_message = "notexists"
+                        print("Incorrect thread specified")
+                    else:
+                        message = ""
+                        length = len(content)
+                        i = 3
+                        while i < length:
+                            message += content[i]
+                            message += " "
+                            i += 1
+                        if thread_sys.ThreadList[title].edit_message(username,message_number, message) == False:
+                            send_message = "unsuccess"
+                            print("Message cannot be edited")
+                        else:
+                            send_message = "success"
+                            print("Message has been edited")
+                        server.send(send_message.encode())
+                elif command == "DLT":
+                    title = content[1]
+                    message_number = int(content[2])
+                    if thread_sys.ThreadList[title].delete_(username,message_number) == False:
+                            send_message = "unsuccess"
+                            print("Message cannot be deleted")
+                    else:
+                        send_message = "success"
+                        print("Message has been deleted")
+                    server.send(send_message.encode())
+                elif command == "UDP":
+                    title = content[1]
+                    filename = content[2]
+                    if title not in thread_sys.ThreadList:
+                        send_message = "notexists"
+                    else:
+                        send_message = "exists"
+                    server.send(send_message.encode())
+                    content = server.recv(2048)
+                    thread_sys.ThreadList[title].upload_file(title,filename,username,content)
+                    send_message = "success"
                     server.send(send_message.encode())
 
 
-
-
-                    
 
 
 if __name__ == "__main__":
