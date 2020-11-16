@@ -35,7 +35,7 @@ class Thread:
             file.write(first_line)
             for content in self.Content_list:
                 if content.type == "file":
-                    tmp = content.author + "uploaded" + content.filename
+                    tmp = content.author + " uploaded " + content.filename + "\n"
                     file.write(tmp)
                 else:
                     tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
@@ -47,7 +47,7 @@ class Thread:
         result = ""
         for content in self.Content_list:
             if content.type == "file":
-                result = result + content.author + "uploaded" + content.filename + "\n"
+                result = result + content.author + " uploaded " + content.filename + "\n"
             else:
                 result = result + str(flag) + " " + content.author + ": " + content.text + "\n"
                 flag += 1
@@ -63,7 +63,7 @@ class Thread:
                 file.write(first_line)
                 for content in self.Content_list:
                     if content.type == "file":
-                        tmp = content.author + "uploaded" + content.filename
+                        tmp = content.author + " uploaded " + content.filename + "\n"
                         file.write(tmp)
                     else:
                         tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
@@ -82,7 +82,7 @@ class Thread:
                 file.write(first_line)
                 for content in self.Content_list:
                     if content.type == "file":
-                        tmp = content.author + "uploaded" + content.filename
+                        tmp = content.author + " uploaded " + content.filename + "\n"
                         file.write(tmp)
                     else:
                         tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
@@ -103,17 +103,13 @@ class Thread:
             file.write(first_line)
             for content in self.Content_list:
                 if content.type == "file":
-                    tmp = content.author + "uploaded" + content.filename
+                    tmp = content.author + " uploaded " + content.filename + "\n"
                     file.write(tmp)
                 else:
                     tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
                     file.write(tmp)
                     flag += 1
-
-
-
-
-        
+    
 class Message:
     author = ""
     text = ""
@@ -343,6 +339,7 @@ def recv_handler(server,connectionsocket):
                     server.send(send_message.encode())
                     content = server.recv(2048)
                     thread_sys.ThreadList[title].upload_file(title,filename,username,content)
+                    print(username + " uploaded file " + filename + " to " + title + " thread")
                     send_message = "success"
                     server.send(send_message.encode())
 

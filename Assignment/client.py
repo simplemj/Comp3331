@@ -1,6 +1,7 @@
 import socket
 import threading
 import sys
+import os
 
 server_name = sys.argv[1]
 server_port = int(sys.argv[2])
@@ -98,7 +99,7 @@ def recv_hurder():
                     clientSocket.send(send_message)
                     recv_message = clientSocket.recv(2048).decode()
                     if recv_message == "success":
-                        print(1)
+                        print(file_name + " uploaded to " + title + " thread")
                 else:
                     print("Thread does not exists")
 
