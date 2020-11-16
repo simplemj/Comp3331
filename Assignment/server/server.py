@@ -42,6 +42,19 @@ class Thread:
                     tmp = username + "uploaded" + content.filename
                     file.write(tmp)
 
+    def read_thread(self):
+        flag = 1
+        result = ""
+        for content in self.Content_list:
+            if content.type == "file":
+                result = result + content.author + "uploaded" + content.filename + "\n"
+            else:
+                result = result + str(flag) + " " + content.author + ": " + content.text + "\n"
+                flag += 1
+        result = result[:-1]
+        return result
+
+        
 class Message:
     author = ""
     text = ""
@@ -102,6 +115,21 @@ def create_new_user(username, password):
     with open("credentials.txt", "a") as fp:
         fp.write("\n" + username + " " + password)
 
+def command_handler(command,content):
+    length1_command = {"LST", "XIT"}
+    length2_command = {"CRT", "RDT", "RMV", "SHT"}
+    length3_commmand = {"DLT", "UDP", "DWN"}
+    greater_than3_command = {"MSG","EDT"}
+    if command in length1_command and len(content) == 1:
+        return True
+    elif command in length2_command and len(content) == 2:
+        return True
+    elif command in length3_commmand and len(content) == 3:
+        return True
+    elif command in greater_than3_command and len(content) >= 3:
+        return True
+    return False
+
 def recv_handler(server,connectionsocket):
     flag = 1
     
@@ -139,64 +167,81 @@ def recv_handler(server,connectionsocket):
         commandList = {"CRT", "MSG", "DLT", "EDT", "LST", "RDT", "UDP", "DWN", "RMV", "XIT", "SHT"}
         command = content[0]
         send_message = ""
+        length = len(content)
         if command not in commandList:
             send_message = "Invalid"
             server.send(send_message.encode())
         else:
-            print(username + " issued " + command + " command")
-            if command == "CRT":
-                title = content[1]
-                if thread_sys.create_new_thread(title,username) == True:
-                    send_message = "success"
-                    server.send(message.encode())
-                else:
-                    send_message = "unsuccess"
-                    server.send(send_message.encode())
-            elif command == "LST":
-                thread_list = thread_sys.ListThread()
-                if thread_list == False:
-                    send_message = "Empty"
-                    server.send(send_message.encode())
-                else:
-                    server.send(thread_list.encode())
-            elif command == "MSG":
-                title = content[1]
-                if title not in thread_sys.ThreadList:
-                    send_message = "unsuccess"
-                    server.send(send_message.encode())
-                    print("Thread " + title + " is not exists")
-                else:
-                    message = ""
-                    length = len(content)
-                    i = 2
-                    while i < length:
-                        message += content[i]
-                        message += " "
-                        i += 1
-                    thread_sys.ThreadList[title].post_message(username,message)
-                    send_message = "success"
-                    server.send(send_message.encode())
-                    print("Message posted to " + title + " thread")
-            elif command == "XIT":
-                print(username + " exited")
-                print("Waiting for clients")
-                send_message = "success"
+            if command_handler(command,content) == False:
+                send_message = "incorrect"
                 server.send(send_message.encode())
-                break
-            elif command == "RMV":
-                title = content[1]
-                if title not in thread_sys.ThreadList:
-                    send_message = "notexists"
-                    print("Thread " + title + " is not exists")
-                else:
-                    if thread_sys.ThreadList[title].author != username:
-                        send_message = "unsuccess"
-                        print("Thread " + title + " cannot be removed")
-                    else:
-                        thread_sys.delete_thread(title)
+            else:
+                print(username + " issued " + command + " command")
+                if command == "CRT":
+                    title = content[1]
+                    if thread_sys.create_new_thread(title,username) == True:
                         send_message = "success"
-                        print("Thread " + title + " removed")
-                server.send(send_message.encode())
+                        server.send(message.encode())
+                        print("Thread " + title + " created")
+                    else:
+                        send_message = "unsuccess"
+                        server.send(send_message.encode())
+                elif command == "LST":
+                    thread_list = thread_sys.ListThread()
+                    if thread_list == False:
+                        send_message = "Empty"
+                        server.send(send_message.encode())
+                    else:
+                        server.send(thread_list.encode())
+                elif command == "MSG":
+                    title = content[1]
+                    if title not in thread_sys.ThreadList:
+                        send_message = "unsuccess"
+                        server.send(send_message.encode())
+                        print("Thread " + title + " is not exists")
+                    else:
+                        message = ""
+                        length = len(content)
+                        i = 2
+                        while i < length:
+                            message += content[i]
+                            message += " "
+                            i += 1
+                        thread_sys.ThreadList[title].post_message(username,message)
+                        send_message = "success"
+                        server.send(send_message.encode())
+                        print("Message posted to " + title + " thread")
+                elif command == "XIT":
+                    print(username + " exited")
+                    print("Waiting for clients")
+                    send_message = "success"
+                    server.send(send_message.encode())
+                    break
+                elif command == "RMV":
+                    title = content[1]
+                    if title not in thread_sys.ThreadList:
+                        send_message = "notexists"
+                        print("Thread " + title + " is not exists")
+                    else:
+                        if thread_sys.ThreadList[title].author != username:
+                            send_message = "unsuccess"
+                            print("Thread " + title + " cannot be removed")
+                        else:
+                            thread_sys.delete_thread(title)
+                            send_message = "success"
+                            print("Thread " + title + " removed")
+                    server.send(send_message.encode())
+                elif command == "RDT":
+                    title = content[1]
+                    if title not in thread_sys.ThreadList:
+                        send_message = "notexists"
+                        print("Incorrect thread specified")
+                    else:
+                        send_message = thread_sys.ThreadList[title].read_thread()
+                        if send_message == "":
+                            print("Thread " + title + " is empty")
+                    server.send(send_message.encode())
+
 
 
 

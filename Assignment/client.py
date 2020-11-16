@@ -38,6 +38,8 @@ def recv_hurder():
         recv_message = clientSocket.recv(2048).decode()
         if recv_message == "Invalid":
             print("Invalid commmand")
+        elif recv_message == "incorrect":
+            print("Incorrect syntax for " + command)
         else:
             if command == "CRT":
                 title = content[1]
@@ -71,6 +73,12 @@ def recv_hurder():
                     print("The thread was created by another user and cannot be removed")
                 elif recv_message == "success":
                     print("Thread " + title + " removed")
+            elif command == "RDT":
+                title = content[1]
+                if recv_message == "notexists":
+                    print("Thread " + title + " does not exists")
+                else:
+                    print(recv_message)
 
 
             
