@@ -1,6 +1,7 @@
 import socket
 import sys
 import threading
+import os
 
 localhost = '127.0.0.1'
 port_number = int(sys.argv[1])
@@ -32,16 +33,14 @@ class Thread:
         with open(self.title, "w") as file:
             first_line = self.author + "\n"
             file.write(first_line)
-            for content in self.Content_list:
-                if content.type == "message":
-                    tmp = str(flag) + " " + username + ": " + content.text + "\n"
-                    file.write(tmp)
+            for content in self.Message_list:
+                tmp = str(flag) + " " + username + ": " + content.text + "\n"
+                file.write(tmp)
                 flag += 1
             with open(self.title, "a") as file:
-                for content in self.Content_list:
-                    if content.type == "file":
-                        tmp = username + "uploaded" + content.filename
-                        file.write(tmp)
+                for content in self.File_list:
+                    tmp = username + "uploaded" + content.filename
+                    file.write(tmp)
 
 class Message:
     author = ""
@@ -82,7 +81,10 @@ class Thread_sys:
         else:
             content = content[:-1]
         return content
-
+    
+    def delete_thread(self,title):
+        os.remove(title)
+        del self.ThreadList[title]
 
 def init_data():
 
@@ -136,6 +138,7 @@ def recv_handler(server,connectionsocket):
         content = recv_message.split(" ")
         commandList = {"CRT", "MSG", "DLT", "EDT", "LST", "RDT", "UDP", "DWN", "RMV", "XIT", "SHT"}
         command = content[0]
+        send_message = ""
         if command not in commandList:
             send_message = "Invalid"
             server.send(send_message.encode())
@@ -174,8 +177,31 @@ def recv_handler(server,connectionsocket):
                     send_message = "success"
                     server.send(send_message.encode())
                     print("Message posted to " + title + " thread")
+            elif command == "XIT":
+                print(username + " exited")
+                print("Waiting for clients")
+                send_message = "success"
+                server.send(send_message.encode())
+                break
+            elif command == "RMV":
+                title = content[1]
+                if title not in thread_sys.ThreadList:
+                    send_message = "notexists"
+                    print("Thread " + title + " is not exists")
+                else:
+                    if thread_sys.ThreadList[title].author != username:
+                        send_message = "unsuccess"
+                        print("Thread " + title + " cannot be removed")
+                    else:
+                        thread_sys.delete_thread(title)
+                        send_message = "success"
+                        print("Thread " + title + " removed")
+                server.send(send_message.encode())
+
+
+
                     
-                    
+
 
 if __name__ == "__main__":
     thread_sys = Thread_sys()

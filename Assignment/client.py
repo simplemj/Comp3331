@@ -55,10 +55,22 @@ def recv_hurder():
                     print(recv_message)
             elif command == "MSG":
                 title = content[1]
-                if recv_message == "unsuccuess":
+                if recv_message == "unsuccess":
                     print("Thread " + title + " is not exists")
                 else:
                     print("Message posted to " + title + " thread")
+            elif command == "XIT":
+                if recv_message == "success":
+                    print("Goodbye")
+                break
+            elif command == "RMV":
+                title = content[1]
+                if recv_message == "notexists":
+                    print("Thread " + title + " not exists")
+                elif recv_message == "unsuccess":
+                    print("The thread was created by another user and cannot be removed")
+                elif recv_message == "success":
+                    print("Thread " + title + " removed")
 
 
             
