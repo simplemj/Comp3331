@@ -107,7 +107,7 @@ def recv_hurder():
                 else:
                     print("The message has been deleted")
             # command UDP
-            elif command == "UDP":
+            elif command == "UPD":
                 title = content[1]
                 file_name = content[2]
                 # the thread is exists
