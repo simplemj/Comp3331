@@ -12,10 +12,18 @@ clientSocket.connect((server_name, server_port))
 def recv_hurder():
     # login process
     while True:
-        username = input("Enter username: ")
-        clientSocket.send(username.encode())
+        while True:
+            username = input("Enter username: ")
+            clientSocket.send(username.encode())
+            message = clientSocket.recv(2048).decode()
+            if message == "uncontinues":
+                print(username + " has already logged in")
+            elif message == "continues":
+                send_message = "next"
+                clientSocket.send(send_message.encode())
+                break
+        
         message = clientSocket.recv(2048).decode()
-    
         # Enter password
         if message == "registered":
             clientSocket.send(input("Enter password: ").encode())

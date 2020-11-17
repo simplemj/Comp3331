@@ -137,9 +137,10 @@ class File:
 
 class Thread_sys:
     ThreadList = dict()
-    
+    user_list = []
     def __init__(self):
         self.ThreadList = dict()
+        self.user_list = []
 
     def create_new_thread(self,title,author):
         if title not in self.ThreadList:
@@ -161,6 +162,12 @@ class Thread_sys:
     def delete_thread(self,title):
         os.remove(title)
         del self.ThreadList[title]
+    
+    def login(self,username):
+        self.user_list.append(username)
+    
+    def logout(self,username):
+        self.user_list.remove(username)
 
 def init_data():
 
@@ -201,8 +208,19 @@ def recv_handler(server,connectionsocket):
         if flag == 1:
             print("Client connected")
             flag += 1
+        
+        while True:
+            username = server.recv(2048).decode()
+            if username in thread_sys.user_list:
+                send_message = "uncontinues"
+                server.send(send_message.encode())
+                print(username + " has already logged in")
+            else:
+                send_message = "continues"
+                server.send(send_message.encode())
+                break
 
-        username = server.recv(2048).decode()
+        recv_message = server.recv(2048).decode()    
         if username in credentials:
             message = "registered"
             server.send(message.encode())
@@ -219,6 +237,7 @@ def recv_handler(server,connectionsocket):
             message = "success"
             server.send(message.encode())
             print(username + " successful login")
+            thread_sys.login(username)
             break
         print("Incorrect password")
         message = "unsuccess"
@@ -276,7 +295,9 @@ def recv_handler(server,connectionsocket):
                         print("Message posted to " + title + " thread")
                 elif command == "XIT":
                     print(username + " exited")
-                    print("Waiting for clients")
+                    thread_sys.logout(username)
+                    if len(thread_sys.user_list) == 0:
+                        print("Waiting for clients")
                     send_message = "success"
                     server.send(send_message.encode())
                     break
@@ -330,7 +351,7 @@ def recv_handler(server,connectionsocket):
                 elif command == "DLT":
                     title = content[1]
                     message_number = int(content[2])
-                    if thread_sys.ThreadList[title].delete_(username,message_number) == False:
+                    if thread_sys.ThreadList[title].delete_message(username,message_number) == False:
                             send_message = "unsuccess"
                             print("Message cannot be deleted")
                     else:
