@@ -1,3 +1,4 @@
+from os import write
 import socket
 import threading
 import sys
@@ -94,14 +95,34 @@ def recv_hurder():
                 title = content[1]
                 file_name = content[2]
                 if recv_message == "exists":
-                    with open(file_name, "rb") as file:
-                        send_message = file.read()
-                    clientSocket.send(send_message)
+                    size = os.path.getsize(file_name)
+                    send_message = str(size)
+                    clientSocket.send(send_message.encode())
                     recv_message = clientSocket.recv(2048).decode()
-                    if recv_message == "success":
-                        print(file_name + " uploaded to " + title + " thread")
+                    if recv_message == "next":
+                        with open(file_name, "rb") as file:
+                            send_message = file.read()
+                        clientSocket.send(send_message)
+                        recv_message = clientSocket.recv(2048).decode()
+                        if recv_message == "success":
+                            print(file_name + " uploaded to " + title + " thread")
                 else:
                     print("Thread does not exists")
+            elif command == "DWN":
+                title = content[1]
+                file_name = content[2]
+                if recv_message == "nottitle":
+                        print("Thread does not exists")
+                elif recv_message == "notexists":
+                    print("File does not exist in Thread " + title)
+                else:
+                    size = int(recv_message)
+                    send_message = "download"
+                    clientSocket.send(send_message.encode())
+                    recv_message = clientSocket.recv(size)
+                    with open(file_name, "wb") as file:
+                        file.write(recv_message)
+                    print(file_name + " successfully downloaded")
 
 
 

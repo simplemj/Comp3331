@@ -95,7 +95,7 @@ class Thread:
         file = File(filename,username)
         self.Content_list.append(file)
         self.File_list.append(file)
-        with open(title + "_" + filename, "wb") as file:
+        with open(title + "-" + filename, "wb") as file:
             file.write(content)
         flag = 1
         with open(self.title, "w") as file:
@@ -109,6 +109,14 @@ class Thread:
                     tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
                     file.write(tmp)
                     flag += 1
+    
+    def download_file(self,filename):
+        for file in self.File_list:
+            if file.filename == filename:
+                with open(self.title + "-" + filename,"rb") as content:
+                    result = content.read()
+                return result
+        return False
     
 class Message:
     author = ""
@@ -337,11 +345,36 @@ def recv_handler(server,connectionsocket):
                     else:
                         send_message = "exists"
                     server.send(send_message.encode())
-                    content = server.recv(2048)
+                    recv_message = server.recv(2048).decode()
+                    size = int(recv_message)
+                    send_message = "next"
+                    server.send(send_message.encode())
+                    content = server.recv(size)
                     thread_sys.ThreadList[title].upload_file(title,filename,username,content)
                     print(username + " uploaded file " + filename + " to " + title + " thread")
                     send_message = "success"
                     server.send(send_message.encode())
+                elif command == "DWN":
+                    title = content[1]
+                    filename = content[2]
+                    if title not in thread_sys.ThreadList:
+                        send_message = "nottitle"
+                        server.send(send_message.encode())
+                        print("Thread " + title + " does not exists")
+                    else:
+                        download_file = thread_sys.ThreadList[title].download_file(filename)
+                        if  download_file == False:
+                            send_message = "notexists"
+                            server.send(send_message.encode())
+                            print(filename + " does not exist in Thread " + title)
+                        else:
+                            size = os.path.getsize(title + "-" +filename)
+                            send_message = str(size)
+                            server.send(send_message.encode())
+                            if server.recv(2048).decode() == "download":
+                                server.send(download_file)
+                                print(filename + " downloaded from Thread " + title)
+                    
 
 
 
