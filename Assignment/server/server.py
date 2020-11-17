@@ -270,7 +270,6 @@ def recv_handler(server,connectionsocket):
         commandList = {"CRT", "MSG", "DLT", "EDT", "LST", "RDT", "UDP", "DWN", "RMV", "XIT", "SHT"}
         command = content[0]
         send_message = ""
-        length = len(content)
         # check the command whether in command list
         if command not in commandList:
             send_message = "Invalid"
@@ -288,7 +287,7 @@ def recv_handler(server,connectionsocket):
                     # check the thread whether has been created 
                     if thread_sys.create_new_thread(title,username) == True:
                         send_message = "success"
-                        server.send(message.encode())
+                        server.send(send_message.encode())
                         print("Thread " + title + " created")
                     else:
                         send_message = "unsuccess"
