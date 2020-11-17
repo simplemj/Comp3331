@@ -24,12 +24,15 @@ class Thread:
         with open(self.title,"w") as file:
             file.write(self.author)
             file.write("\n")
-    
+    # command MSG
     def post_message(self,username,message):
         flag = 1
+        # create new Message
         new_message = Message(username,message)
+        # add to the All content list and message list
         self.Content_list.append(new_message)
         self.Message_list.append(new_message)
+        # update the file
         with open(self.title, "w") as file:
             first_line = self.author + "\n"
             file.write(first_line)
@@ -41,10 +44,11 @@ class Thread:
                     tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
                     file.write(tmp)
                     flag += 1
-
+    # command RDT
     def read_thread(self):
         flag = 1
         result = ""
+        # copy content list to result string
         for content in self.Content_list:
             if content.type == "file":
                 result = result + content.author + " uploaded " + content.filename + "\n"
@@ -53,11 +57,13 @@ class Thread:
                 flag += 1
         result = result[:-1]
         return result
-
+    # command EDT
     def edit_message(self,username,message_number,message):
+        # check the message author whether same as username
         if self.Message_list[message_number-1].author == username:
             self.Message_list[message_number-1].text = message
             flag = 1
+            # update thread content file
             with open(self.title, "w") as file:
                 first_line = self.author + "\n"
                 file.write(first_line)
@@ -71,12 +77,15 @@ class Thread:
                         flag += 1
             return True
         return False
-
+    # command DLT
     def delete_message(self,username,message_number):
         if self.Message_list[message_number-1].author == username:
+            # remove content list
             self.Content_list.remove(self.Message_list[message_number-1])
+            # remove message list
             self.Message_list.remove(self.Message_list[message_number-1])
             flag = 1
+            # update thread content file
             with open(self.title, "w") as file:
                 first_line = self.author + "\n"
                 file.write(first_line)
@@ -90,14 +99,18 @@ class Thread:
                         flag += 1
             return True
         return False
-    
+    # command UDP
     def upload_file(self,title,filename,username,content):
+        # create new file
         file = File(filename,username)
+        # add new file into content list and file list
         self.Content_list.append(file)
         self.File_list.append(file)
+        # write content to file
         with open(title + "-" + filename, "wb") as file:
             file.write(content)
         flag = 1
+        # update thread content file
         with open(self.title, "w") as file:
             first_line = self.author + "\n"
             file.write(first_line)
@@ -109,13 +122,16 @@ class Thread:
                     tmp = str(flag) + " " + content.author + ": " + content.text + "\n"
                     file.write(tmp)
                     flag += 1
-    
+    # command DWN
     def download_file(self,filename):
         for file in self.File_list:
+            # find the file
             if file.filename == filename:
+                # read the DWN file content return it
                 with open(self.title + "-" + filename,"rb") as content:
                     result = content.read()
                 return result
+        # if not exist return false
         return False
     
 class Message:
@@ -135,21 +151,23 @@ class File:
         self.filename = filename
         self.author = author
 
+# Thread_sys include all thread data
 class Thread_sys:
     ThreadList = dict()
     user_list = []
     def __init__(self):
         self.ThreadList = dict()
         self.user_list = []
-
+    # command CRT
     def create_new_thread(self,title,author):
         if title not in self.ThreadList:
             self.ThreadList[title] = Thread(title,author)
             return True
         return False
-    
+    # command LST
     def ListThread(self):
         content = ""
+        # iterate all title
         for title in self.ThreadList.keys():
             content = content + title
             content = content + "\n"
@@ -158,19 +176,18 @@ class Thread_sys:
         else:
             content = content[:-1]
         return content
-    
+    # command DLT   
     def delete_thread(self,title):
         os.remove(title)
         del self.ThreadList[title]
-    
+    # add user to login list
     def login(self,username):
         self.user_list.append(username)
-    
+    # remove user to login list
     def logout(self,username):
         self.user_list.remove(username)
 
 def init_data():
-
     # read credentials.txt
     with open("credentials.txt", "r") as file:
         content = file.read().splitlines()
@@ -179,12 +196,12 @@ def init_data():
                 data = text.split(" ")
                 username, password = data[0], data[1]
                 credentials[username] = password
-
+# add new user to credential file
 def create_new_user(username, password):
     credentials.update({username: password})
     with open("credentials.txt", "a") as fp:
         fp.write("\n" + username + " " + password)
-
+# implement invalid command 
 def command_handler(command,content):
     length1_command = {"LST", "XIT"}
     length2_command = {"CRT", "RDT", "RMV", "SHT"}
@@ -203,14 +220,16 @@ def command_handler(command,content):
 def recv_handler(server,connectionsocket):
     flag = 1
     
-    # Determine if the user is registered
+    # while loop for login
     while True:
+        # set flag only print once
         if flag == 1:
             print("Client connected")
             flag += 1
-        
+        # while loop for check the user whether has readly login
         while True:
             username = server.recv(2048).decode()
+            # check the user whether in user login list
             if username in thread_sys.user_list:
                 send_message = "uncontinues"
                 server.send(send_message.encode())
@@ -219,7 +238,7 @@ def recv_handler(server,connectionsocket):
                 send_message = "continues"
                 server.send(send_message.encode())
                 break
-
+        # check the user whether is new user
         recv_message = server.recv(2048).decode()    
         if username in credentials:
             message = "registered"
@@ -231,8 +250,7 @@ def recv_handler(server,connectionsocket):
             server.send(message.encode())
             password = server.recv(2048).decode()
             create_new_user(username, password)
-        
-        
+        # check the password whether is correct
         if(credentials[username] == password):
             message = "success"
             server.send(message.encode())
@@ -243,24 +261,31 @@ def recv_handler(server,connectionsocket):
         message = "unsuccess"
         server.send(message.encode())
     
+    # while loop for command process
     while True:
+        # recv command string 
         recv_message = server.recv(2048).decode()
+        # splite the string into a list
         content = recv_message.split(" ")
         commandList = {"CRT", "MSG", "DLT", "EDT", "LST", "RDT", "UDP", "DWN", "RMV", "XIT", "SHT"}
         command = content[0]
         send_message = ""
         length = len(content)
+        # check the command whether in command list
         if command not in commandList:
             send_message = "Invalid"
             server.send(send_message.encode())
         else:
+            # check the command format whether match the list
             if command_handler(command,content) == False:
                 send_message = "incorrect"
                 server.send(send_message.encode())
             else:
                 print(username + " issued " + command + " command")
+                # command CRT
                 if command == "CRT":
                     title = content[1]
+                    # check the thread whether has been created 
                     if thread_sys.create_new_thread(title,username) == True:
                         send_message = "success"
                         server.send(message.encode())
@@ -268,15 +293,19 @@ def recv_handler(server,connectionsocket):
                     else:
                         send_message = "unsuccess"
                         server.send(send_message.encode())
+                # command LST
                 elif command == "LST":
                     thread_list = thread_sys.ListThread()
+                    # check the list whether size is 0
                     if thread_list == False:
                         send_message = "Empty"
                         server.send(send_message.encode())
                     else:
                         server.send(thread_list.encode())
+                # command MSG
                 elif command == "MSG":
                     title = content[1]
+                    # check the thread whether is exist
                     if title not in thread_sys.ThreadList:
                         send_message = "unsuccess"
                         server.send(send_message.encode())
@@ -284,6 +313,7 @@ def recv_handler(server,connectionsocket):
                     else:
                         message = ""
                         length = len(content)
+                        # combine the post message into one list
                         i = 2
                         while i < length:
                             message += content[i]
@@ -293,20 +323,26 @@ def recv_handler(server,connectionsocket):
                         send_message = "success"
                         server.send(send_message.encode())
                         print("Message posted to " + title + " thread")
+                # command XIT
                 elif command == "XIT":
                     print(username + " exited")
+                    # logout the current user
                     thread_sys.logout(username)
+                    # check whether has other user has login
                     if len(thread_sys.user_list) == 0:
                         print("Waiting for clients")
                     send_message = "success"
                     server.send(send_message.encode())
                     break
+                # command RMV
                 elif command == "RMV":
                     title = content[1]
+                    # check the thread title whether in thread list
                     if title not in thread_sys.ThreadList:
                         send_message = "notexists"
                         print("Thread " + title + " is not exists")
                     else:
+                        # check the current user whether is the thread author
                         if thread_sys.ThreadList[title].author != username:
                             send_message = "unsuccess"
                             print("Thread " + title + " cannot be removed")
@@ -315,8 +351,10 @@ def recv_handler(server,connectionsocket):
                             send_message = "success"
                             print("Thread " + title + " removed")
                     server.send(send_message.encode())
+                # command RDT
                 elif command == "RDT":
                     title = content[1]
+                    # check the thread title whether in thread list
                     if title not in thread_sys.ThreadList:
                         send_message = "notexists"
                         print("Incorrect thread specified")
@@ -327,13 +365,16 @@ def recv_handler(server,connectionsocket):
                         else: 
                             print("Thread " + title + " read")
                     server.send(send_message.encode())
+                # command EDT
                 elif command == "EDT":
                     title = content[1]
                     message_number = int(content[2])
+                    # check the thread title whether in thread list
                     if title not in thread_sys.ThreadList:
                         send_message = "notexists"
                         print("Incorrect thread specified")
                     else:
+                        # combine the command message
                         message = ""
                         length = len(content)
                         i = 3
@@ -341,6 +382,7 @@ def recv_handler(server,connectionsocket):
                             message += content[i]
                             message += " "
                             i += 1
+                        # check the thread message whether has been edit successfully
                         if thread_sys.ThreadList[title].edit_message(username,message_number, message) == False:
                             send_message = "unsuccess"
                             print("Message cannot be edited")
@@ -348,9 +390,11 @@ def recv_handler(server,connectionsocket):
                             send_message = "success"
                             print("Message has been edited")
                         server.send(send_message.encode())
+                # command DLT
                 elif command == "DLT":
                     title = content[1]
                     message_number = int(content[2])
+                    # check the current user whether can delete that message
                     if thread_sys.ThreadList[title].delete_message(username,message_number) == False:
                             send_message = "unsuccess"
                             print("Message cannot be deleted")
@@ -358,37 +402,45 @@ def recv_handler(server,connectionsocket):
                         send_message = "success"
                         print("Message has been deleted")
                     server.send(send_message.encode())
+                # command UDP
                 elif command == "UDP":
                     title = content[1]
                     filename = content[2]
+                    # check the thread title whether in thread list
                     if title not in thread_sys.ThreadList:
                         send_message = "notexists"
                     else:
                         send_message = "exists"
                     server.send(send_message.encode())
                     recv_message = server.recv(2048).decode()
+                    # recv the binary file size
                     size = int(recv_message)
                     send_message = "next"
                     server.send(send_message.encode())
+                    # recv the binary file
                     content = server.recv(size)
                     thread_sys.ThreadList[title].upload_file(title,filename,username,content)
                     print(username + " uploaded file " + filename + " to " + title + " thread")
                     send_message = "success"
                     server.send(send_message.encode())
+                # command DWN
                 elif command == "DWN":
                     title = content[1]
                     filename = content[2]
+                    # check the thread title whether in thread list
                     if title not in thread_sys.ThreadList:
                         send_message = "nottitle"
                         server.send(send_message.encode())
                         print("Thread " + title + " does not exists")
                     else:
                         download_file = thread_sys.ThreadList[title].download_file(filename)
+                        # check the thread whether exist
                         if  download_file == False:
                             send_message = "notexists"
                             server.send(send_message.encode())
                             print(filename + " does not exist in Thread " + title)
                         else:
+                            # get the size of download file
                             size = os.path.getsize(title + "-" +filename)
                             send_message = str(size)
                             server.send(send_message.encode())
@@ -397,11 +449,10 @@ def recv_handler(server,connectionsocket):
                                 print(filename + " downloaded from Thread " + title)
                     
 
-
-
-
 if __name__ == "__main__":
+    # create thread system 
     thread_sys = Thread_sys()
+    # read all the data for system
     init_data()
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind(('127.0.0.1', port_number))
