@@ -24,7 +24,7 @@ def recv_hurder():
                 break
         
         message = clientSocket.recv(2048).decode()
-        # while loop for enter password
+        # Enter password
         if message == "registered":
             clientSocket.send(input("Enter password: ").encode())
         else:
@@ -36,7 +36,6 @@ def recv_hurder():
             break
         elif status == "unsuccess":
             print("Invalid password")
-            continue
 
     # while loop for command process
     while True:

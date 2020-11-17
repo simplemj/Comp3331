@@ -205,7 +205,7 @@ def create_new_user(username, password):
 def command_handler(command,content):
     length1_command = {"LST", "XIT"}
     length2_command = {"CRT", "RDT", "RMV", "SHT"}
-    length3_commmand = {"DLT", "UDP", "DWN"}
+    length3_commmand = {"DLT", "UPD", "DWN"}
     greater_than3_command = {"MSG","EDT"}
     if command in length1_command and len(content) == 1:
         return True
@@ -267,7 +267,7 @@ def recv_handler(server,connectionsocket):
         recv_message = server.recv(2048).decode()
         # splite the string into a list
         content = recv_message.split(" ")
-        commandList = {"CRT", "MSG", "DLT", "EDT", "LST", "RDT", "UDP", "DWN", "RMV", "XIT", "SHT"}
+        commandList = {"CRT", "MSG", "DLT", "EDT", "LST", "RDT", "UPD", "DWN", "RMV", "XIT", "SHT"}
         command = content[0]
         send_message = ""
         # check the command whether in command list
@@ -402,7 +402,7 @@ def recv_handler(server,connectionsocket):
                         print("Message has been deleted")
                     server.send(send_message.encode())
                 # command UDP
-                elif command == "UDP":
+                elif command == "UPD":
                     title = content[1]
                     filename = content[2]
                     # check the thread title whether in thread list
